@@ -1,12 +1,12 @@
 import express from "express";
-import { Spotify } from "spdl";
+import spdl from "spdl";      // default import, curly braces ഇല്ല
 import dotenv from "dotenv";
-dotenv.config();  // .env ഫയൽ ലോഡ് ചെയ്യുന്നു
+dotenv.config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 10000; // Render uses PORT env var
 
-// .env-ലുള്ള SP_DC cookie value ഇവിടെ ഉപയോഗിക്കുന്നു
+// .env ഫയലിൽ 'SP_DC=നിങ്ങളുടെ_cookie_value' ചേർക്കുക
 const SPOTIFY_COOKIE = process.env.SP_DC;
 
 app.get("/download", async (req, res) => {
@@ -14,12 +14,10 @@ app.get("/download", async (req, res) => {
   if (!url) return res.status(400).json({ error: "Spotify URL ആവശ്യമാണ്" });
 
   try {
-    // Cookie ഉപയോഗിച്ച് Spotify client സൃഷ്ടിക്കുന്നു
-    const client = await Spotify.create({
+    // spdl(url, options) pattern
+    const stream = await spdl(url, {
       cookie: `sp_dc=${SPOTIFY_COOKIE}`
     });
-
-    const stream = await client.download(url);
     res.setHeader("Content-Disposition", "attachment; filename=song.ogg");
     stream.pipe(res);
   } catch (error) {
@@ -27,6 +25,7 @@ app.get("/download", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Spotify Downloader API http://localhost:${port} പ്രവർത്തിക്കുന്നു`);
+// Render expects server to bind to PORT env var & 0.0.0.0
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Spotify Downloader API Render-ൽ port ${port} -ൽ പ്രവർത്തിക്കുന്നു`);
 });
